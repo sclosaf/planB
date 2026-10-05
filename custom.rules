@@ -104,8 +104,8 @@ alert tcp any any -> any any (msg:"ET SQL MySQL mysql.user Dump (Used in Metaspl
 alert tcp any any -> any any (msg:"GPL SQL shellcode attempt"; flow:established,to_server; content:"9 |D0 00 92 01 C2 00|R|00|U|00|9 |EC 00|"; sid:2100692;)
 alert tcp any any -> any any (msg:"GPL SQL MSSQL shellcode attempt 2"; flow:established,to_server; content:"H|00|%|00|x|00|w|00 90 00 90 00 90 00 90 00 90 00|3|00 C0 00|P|00|h|00|.|00|"; sid:2100693;)
 alert tcp any any -> any any (msg:"GPL SQL shellcode attempt"; flow:established,to_server; content:"H|00|%|00|x|00|w|00 90 00 90 00 90 00 90 00 90 00|3|00 C0 00|P|00|h|00|.|00|"; sid:2100694;)
-alert tcp any any -> any any (msg:"GPL SQL MYSQL root login attempt"; flow:established,to_server; content:"|0A 00 00 01 85 04 00 00 80|root|00|"; sid:2101775;)
-alert tcp any any-> any any (msg:"GPL SQL MYSQL show databases attempt"; flow:established,to_server; content:"|0F 00 00 00 03|show databases"; classtype: sid:2101776;)
+alert tcp any any -> any any (msg:"GPL SQL MYSQL root login attempt"; flow:established,to_server; content:"|0A 00 00 01 85 04 00 00 80|root|00|"; sid:2101786;)
+alert tcp any any-> any any (msg:"GPL SQL MYSQL show databases attempt"; flow:established,to_server; content:"|0F 00 00 00 03|show databases"; classtype: sid:2101781;)
 
 alert http any any -> any any (msg:"ET WEB_SERVER Possible SQL Injection (declare) in HTTP Request Body"; flow:established,to_server; http.request_body; content:"DECLARE|20|"; fast_pattern; nocase; content:"CHAR("; nocase; content:"CAST("; nocase; sid:2053462;)
 alert http any any -> any any (msg:"ET WEB_SERVER Possible SQL Injection Obfuscated by REVERSE function in HTTP Request Body"; flow:established,to_server; http.request_body; content:"REVERSE"; nocase; pcre:"/^(?:\x28|\x20+\x28)/R"; sid:2053464;)
