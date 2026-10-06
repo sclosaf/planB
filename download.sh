@@ -60,20 +60,15 @@ rules=(
 urls=(
     "https://www.kaggle.com/api/v1/datasets/download/mohamedamineferrag/edgeiiotset-cyber-security-dataset-of-iot-iiot"
 
-    "https://archive.ics.uci.edu/static/public/516/kitsune+network+attack+dataset.zip"
-
-    "https://archive.ics.uci.edu/static/public/516/kitsune+network+attack+dataset.zip"
-
-    "https://feodotracker.abuse.ch/downloads/feodotracker.tar.gz"
-    "https://feodotracker.abuse.ch/downloads/feodotracker_aggressive.tar.gz"
-
-    "https://rules.emergingthreats.net/open/suricata-7.0.3/emerging-all.rules.tar.gz"
-    "https://rules.emergingthreats.net/open/suricata-7.0.3/emerging.rules.tar.gz"
-
-    "https://rules.emergingthreats.net/open/suricata-7.0.3/emerging-all.rules.zip"
-    "https://rules.emergingthreats.net/open/suricata-7.0.3/emerging.rules.zip"
-
-    "https://rules.emergingthreats.net/open/suricata-7.0.3/SID-Descriptions-ETOpen.json.gz"
+    #"https://archive.ics.uci.edu/static/public/516/kitsune+network+attack+dataset.zip"
+    #"https://archive.ics.uci.edu/static/public/516/kitsune+network+attack+dataset.zip"
+    #"https://feodotracker.abuse.ch/downloads/feodotracker.tar.gz"
+    #"https://feodotracker.abuse.ch/downloads/feodotracker_aggressive.tar.gz"
+    #"https://rules.emergingthreats.net/open/suricata-7.0.3/emerging-all.rules.tar.gz"
+    #"https://rules.emergingthreats.net/open/suricata-7.0.3/emerging.rules.tar.gz"
+    #"https://rules.emergingthreats.net/open/suricata-7.0.3/emerging-all.rules.zip"
+    #"https://rules.emergingthreats.net/open/suricata-7.0.3/emerging.rules.zip"
+    #"https://rules.emergingthreats.net/open/suricata-7.0.3/SID-Descriptions-ETOpen.json.gz"
 )
 
 echo "WARNING:"
@@ -139,4 +134,7 @@ echo
 echo "If you need other PCAPs, look into:"
 echo "https://gitlab.com/wireshark/wireshark/-/wikis/SampleCaptures"
 echo "https://docs.suricata.io/en/suricata-8.0.4/public-data-sets.html"
+echo "https://mawi.wide.ad.jp/mawi/samplepoint-F/2012/"
+echo
+echo "To find a testing dataset use https://research.unsw.edu.au/projects/unsw-nb15-dataset"
 echo
