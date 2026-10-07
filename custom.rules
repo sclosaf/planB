@@ -1,134 +1,197 @@
-# SQL
-alert http any any -> any any (msg:"SQL keyword detected: SELECT"; flow:to_server,established; content:"SELECT"; nocase; sid:1000000;)
-alert http any any -> any any (msg:"SQL keyword detected: UNION"; flow:to_server,established; content:"UNION"; nocase; sid:1000001;)
-alert http any any -> any any (msg:"SQL keyword detected: INSERT"; flow:to_server,established; content:"INSERT"; nocase; sid:1000002;)
-alert http any any -> any any (msg:"SQL keyword detected: UPDATE"; flow:to_server,established; content:"UPDATE"; nocase; sid:1000003;)
-alert http any any -> any any (msg:"SQL keyword detected: DELETE"; flow:to_server,established; content:"DELETE"; nocase; sid:1000004;)
-alert http any any -> any any (msg:"SQL keyword detected: DROP"; flow:to_server,established; content:"DROP"; nocase; sid:1000005;)
-alert http any any -> any any (msg:"SQL keyword detected: FROM"; flow:to_server,established; content:"FROM"; nocase; sid:1000006;)
-alert http any any -> any any (msg:"SQL keyword detected: WHERE"; flow:to_server,established; content:"WHERE"; nocase; sid:1000007;)
-alert http any any -> any any (msg:"SQL keyword detected: HAVING"; flow:to_server,established; content:"HAVING"; nocase; sid:1000022;)
-alert http any any -> any any (msg:"SQL keyword detected: ORDER BY"; flow:to_server,established; content:"ORDER BY"; nocase; sid:1000023;)
-alert http any any -> any any (msg:"SQL keyword detected: GROUP BY"; flow:to_server,established; content:"GROUP BY"; nocase; sid:1000024;)
-alert http any any -> any any (msg:"SQL keyword detected: INTO"; flow:to_server,established; content:"INTO"; nocase; sid:1000025;)
+# SQL Injections
 
-alert http any any -> any any (msg:"SQL keyword detected: OR"; flow:to_server,established; pcre:"/\bOR\b/i"; sid:1000008;)
-alert http any any -> any any (msg:"SQL keyword detected: AND"; flow:to_server,established; pcre:"/\bAND\b/i"; sid:1000009;)
+alert http any any -> any any (msg:"SQLi: UNION SELECT in body"; flow:to_server,established; http.request_body; content:"UNION"; nocase; fast_pattern; pcre:"/UNION\s+(?:ALL\s+)?SELECT/i"; sid:1000000;)
 
-alert http any any -> any any (msg:"SQL ' detected"; flow:to_server,established; content:"'"; sid:1000012;)
-alert http any any -> any any (msg:"SQL comment pattern: --"; flow:to_server,established; content:"--"; sid:1000013;)
-alert http any any -> any any (msg:"SQL comment pattern: /*"; flow:to_server,established; content:"/*"; sid:1000015;)
+alert http any any -> any any (msg:"SQLi: UNION SELECT in URI"; flow:to_server,established; http.uri; content:"UNION"; nocase; fast_pattern; pcre:"/UNION\s+(?:ALL\s+)?SELECT/i"; sid:1000010;)
 
-alert http any any -> any any (msg:"SQL keyword detected: INFORMATION_SCHEMA"; flow:to_server,established; content:"INFORMATION_SCHEMA"; nocase; sid:1000016;)
+alert http any any -> any any (msg:"SQLi: UNION SELECT in header"; flow:to_server,established; http.header; content:"UNION"; nocase; fast_pattern; pcre:"/UNION\s+(?:ALL\s+)?SELECT/i"; sid:1000012;)
 
-alert http any any -> any any (msg:"SQL keyword detected: SLEEP"; flow:to_server,established; content:"SLEEP"; nocase; sid:1000017;)
-alert http any any -> any any (msg:"SQL keyword detected: BENCHMARK"; flow:to_server,established; content:"BENCHMARK"; nocase; sid:1000018;)
-alert http any any -> any any (msg:"SQL keyword detected: WAITFOR"; flow:to_server,established; content:"WAITFOR"; nocase; sid:1000019;)
+alert http any any -> any any (msg:"SQLi: OR/AND tautology in body"; flow:to_server,established; http.request_body; pcre:"/(?:\bOR\b|\bAND\b)\s+(?:'?[^']*'?\s*=\s*'?[^']*'?|\d+\s*=\s*\d+)/i"; sid:1000001;)
 
-alert http any any -> any any (msg:"SQL keyword detected: EXEC"; flow:to_server,established; content:"EXEC"; nocase; sid:1000020;)
-alert http any any -> any any (msg:"SQL keyword detected: XP_CMDSHELL"; flow:to_server,established; content:"XP_CMDSHELL"; nocase; sid:1000021;)
+alert http any any -> any any (msg:"SQLi: OR/AND tautology in URI"; flow:to_server,established; http.uri; pcre:"/(?:\bOR\b|\bAND\b)\s+\d+\s*=\s*\d+/i"; sid:1000011;)
 
-alert http any any -> any any (msg:"SQL keyword detected: INTO OUTFILE"; flow:to_server,established; content:"INTO OUTFILE"; nocase; sid:1000030;)
-alert http any any -> any any (msg:"SQL keyword detected: LOAD_FILE"; flow:to_server,established; content:"LOAD_FILE"; nocase; sid:1000026;)
+alert http any any -> any any (msg:"SQLi: OR/AND tautology in header"; flow:to_server,established; http.header; pcre:"/(?:\bOR\b|\bAND\b)\s+(?:'?[^']*'?\s*=\s*'?[^']*'?|\d+\s*=\s*\d+)/i"; sid:1000013;)
 
-alert http any any -> any any (msg:"SQL keyword detected: CONCAT"; flow:to_server,established; content:"CONCAT"; nocase; sid:1000027;)
-alert http any any -> any any (msg:"SQL keyword detected: CHAR"; flow:to_server,established; content:"CHAR"; nocase; sid:1000028;)
-alert http any any -> any any (msg:"SQL keyword detected: ASCII"; flow:to_server,established; content:"ASCII"; nocase; sid:1000029;)
+alert http any any -> any any (msg:"SQLi: stacked query in body"; flow:to_server,established; http.request_body; pcre:"/;\s*(?:SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC)\b/i"; sid:1000002;)
+
+alert http any any -> any any (msg:"SQLi: stacked query in URI"; flow:to_server,established; http.uri; pcre:"/;\s*(?:SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC)\b/i"; sid:1000014;)
+
+alert http any any -> any any (msg:"SQLi: stacked query in header"; flow:to_server,established; http.header; pcre:"/;\s*(?:SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC)\b/i"; sid:1000015;)
+
+alert http any any -> any any (msg:"SQLi: comment + keyword in body"; flow:to_server,established; http.request_body; pcre:"/(?:--|#|\/\*)[^\n]{0,20}\b(?:SELECT|UNION|INSERT|UPDATE|DELETE|DROP|OR|AND)\b/i"; sid:1000003;)
+
+alert http any any -> any any (msg:"SQLi: comment + keyword in URI"; flow:to_server,established; http.uri; pcre:"/(?:--|#|\/\*)[^\n]{0,20}\b(?:SELECT|UNION|INSERT|UPDATE|DELETE|DROP|OR|AND)\b/i"; sid:1000016;)
+
+alert http any any -> any any (msg:"SQLi: comment + keyword in header"; flow:to_server,established; http.header; pcre:"/(?:--|#|\/\*)[^\n]{0,20}\b(?:SELECT|UNION|INSERT|UPDATE|DELETE|DROP|OR|AND)\b/i"; sid:1000017;)
+
+alert http any any -> any any (msg:"SQLi: time-based in body"; flow:to_server,established; http.request_body; pcre:"/\b(?:SLEEP|BENCHMARK|WAITFOR\s+DELAY|PG_SLEEP)\s*\(/i"; sid:1000004;)
+
+alert http any any -> any any (msg:"SQLi: time-based in URI"; flow:to_server,established; http.uri; pcre:"/\b(?:SLEEP|BENCHMARK|WAITFOR\s+DELAY|PG_SLEEP)\s*\(/i"; sid:1000018;)
+
+alert http any any -> any any (msg:"SQLi: time-based in header"; flow:to_server,established; http.header; pcre:"/\b(?:SLEEP|BENCHMARK|WAITFOR\s+DELAY|PG_SLEEP)\s*\(/i"; sid:1000019;)
+
+alert http any any -> any any (msg:"SQLi: file read/write in body"; flow:to_server,established; http.request_body; pcre:"/\b(?:LOAD_FILE\s*\(|INTO\s+(?:OUT|DUMP)FILE\b)/i"; sid:1000005;)
+
+alert http any any -> any any (msg:"SQLi: file read/write in URI"; flow:to_server,established; http.uri; pcre:"/\b(?:LOAD_FILE\s*\(|INTO\s+(?:OUT|DUMP)FILE\b)/i"; sid:1000020;)
+
+alert http any any -> any any (msg:"SQLi: file read/write in header"; flow:to_server,established; http.header; pcre:"/\b(?:LOAD_FILE\s*\(|INTO\s+(?:OUT|DUMP)FILE\b)/i"; sid:1000021;)
+
+alert http any any -> any any (msg:"SQLi: information_schema in body"; flow:to_server,established; http.request_body; content:"INFORMATION_SCHEMA"; nocase; fast_pattern; pcre:"/INFORMATION_SCHEMA\s*\.\s*(?:TABLES|COLUMNS|SCHEMATA)/i"; sid:1000006;)
+
+alert http any any -> any any (msg:"SQLi: information_schema in URI"; flow:to_server,established; http.uri; content:"INFORMATION_SCHEMA"; nocase; fast_pattern; pcre:"/INFORMATION_SCHEMA\s*\.\s*(?:TABLES|COLUMNS|SCHEMATA)/i"; sid:1000022;)
+
+alert http any any -> any any (msg:"SQLi: information_schema in header"; flow:to_server,established; http.header; content:"INFORMATION_SCHEMA"; nocase; fast_pattern; pcre:"/INFORMATION_SCHEMA\s*\.\s*(?:TABLES|COLUMNS|SCHEMATA)/i"; sid:1000023;)
+
+alert http any any -> any any (msg:"SQLi: xp_cmdshell in body"; flow:to_server,established; http.request_body; content:"XP_CMDSHELL"; nocase; fast_pattern; sid:1000007;)
+
+alert http any any -> any any (msg:"SQLi: xp_cmdshell in URI"; flow:to_server,established; http.uri; content:"XP_CMDSHELL"; nocase; fast_pattern; sid:1000024;)
+
+alert http any any -> any any (msg:"SQLi: xp_cmdshell in header"; flow:to_server,established; http.header; content:"XP_CMDSHELL"; nocase; fast_pattern; sid:1000025;)
+
+alert http any any -> any any (msg:"SQLi: CHAR/CONCAT/ASCII in body"; flow:to_server,established; http.request_body; pcre:"/(?:CHAR|CONCAT|ASCII)\s*\([^)]*\)\s*(?:CHAR|CONCAT|ASCII)\s*\(/i"; sid:1000008;)
+
+alert http any any -> any any (msg:"SQLi: CHAR/CONCAT/ASCII in URI"; flow:to_server,established; http.uri; pcre:"/(?:CHAR|CONCAT|ASCII)\s*\([^)]*\)\s*(?:CHAR|CONCAT|ASCII)\s*\(/i"; sid:1000026;)
+
+alert http any any -> any any (msg:"SQLi: CHAR/CONCAT/ASCII in header"; flow:to_server,established; http.header; pcre:"/(?:CHAR|CONCAT|ASCII)\s*\([^)]*\)\s*(?:CHAR|CONCAT|ASCII)\s*\(/i"; sid:1000027;)
+
+alert http any any -> any any (msg:"SQLi: DECLARE + CHAR + CAST in body"; flow:established,to_server; http.request_body; content:"DECLARE|20|"; fast_pattern; nocase; content:"CHAR("; nocase; content:"CAST("; nocase; sid:2053462;)
+
+alert http any any -> any any (msg:"SQLi: DECLARE + CHAR + CAST in URI"; flow:established,to_server; http.uri; content:"DECLARE|20|"; fast_pattern; nocase; content:"CHAR("; nocase; content:"CAST("; nocase; sid:2053465;)
+
+alert http any any -> any any (msg:"SQLi: DECLARE + CHAR + CAST in header"; flow:established,to_server; http.header; content:"DECLARE|20|"; fast_pattern; nocase; content:"CHAR("; nocase; content:"CAST("; nocase; sid:2053466;)
+
+alert http any any -> any any (msg:"SQLi: REVERSE in body"; flow:established,to_server; http.request_body; content:"REVERSE"; nocase; pcre:"/^(?:\x28|\x20+\x28)/R"; sid:2053464;)
+
+alert http any any -> any any (msg:"SQLi: REVERSE in URI"; flow:established,to_server; http.uri; content:"REVERSE"; nocase; pcre:"/^(?:\x28|\x20+\x28)/R"; sid:2053467;)
+
+alert http any any -> any any (msg:"SQLi: REVERSE in header"; flow:established,to_server; http.header; content:"REVERSE"; nocase; pcre:"/^(?:\x20+\x28)/R"; sid:2053468;)
 
 # Brute force
-alert http any any -> any any (msg:"Brute force: high POST rate"; flow:to_server,established; content:"POST"; http_method; threshold:type both, track by_src, count 5, seconds 10; sid:2000230;)
 
-alert http any any -> any any (msg:"Password attack: username root"; flow:to_server,established; http.request_body; content:"username=root&"; nocase; sid:1004001;)
-alert http any any -> any any (msg:"Password attack: username admin"; flow:to_server,established; http.request_body; content:"username=admin&"; nocase; sid:1004002;)
-alert http any any -> any any (msg:"Password attack: username user"; flow:to_server,established; http.request_body; content:"username=user&"; nocase; sid:1004003;)
-alert http any any -> any any (msg:"Password attack: username test"; flow:to_server,established; http.request_body; content:"username=test&"; nocase; sid:1004004;)
+alert http any any -> any any (msg:"Brute force: repeated 401 responses"; flow:to_server,established; http.method; content:"POST"; http.stat_code; content:"401"; detection_filter: track by_src, count 10, seconds 60; sid:2000230;)
 
-alert http any any -> any any (msg:"Password attack: password 123456"; flow:to_server,established; http.request_body; content:"password=123456&"; nocase; sid:1002001;)
-alert http any any -> any any (msg:"Password attack: password admin"; flow:to_server,established; http.request_body; content:"password=admin&"; nocase; sid:1002002;)
-alert http any any -> any any (msg:"Password attack: password 12345678"; flow:to_server,established; http.request_body; content:"password=12345678&"; nocase; sid:1002003;)
-alert http any any -> any any (msg:"Password attack: password 123456789"; flow:to_server,established; http.request_body; content:"password=123456789&"; nocase; sid:1002004;)
-alert http any any -> any any (msg:"Password attack: password 12345"; flow:to_server,established; http.request_body; content:"password=12345&"; nocase; sid:1002005;)
-alert http any any -> any any (msg:"Password attack: password password"; flow:to_server,established; http.request_body; content:"password=password&"; nocase; sid:1002006;)
-alert http any any -> any any (msg:"Password attack: password Aa123456"; flow:to_server,established; http.request_body; content:"password=Aa123456&"; nocase; sid:1002007;)
-alert http any any -> any any (msg:"Password attack: password 1234567890"; flow:to_server,established; http.request_body; content:"password=1234567890&"; nocase; sid:1002008;)
-alert http any any -> any any (msg:"Password attack: password Pass@123"; flow:to_server,established; http.request_body; content:"password=Pass@123&"; nocase; sid:1002009;)
-alert http any any -> any any (msg:"Password attack: password admin123"; flow:to_server,established; http.request_body; content:"password=admin123&"; nocase; sid:1002010;)
-alert http any any -> any any (msg:"Password attack: password 1234567"; flow:to_server,established; http.request_body; content:"password=1234567&"; nocase; sid:1002011;)
-alert http any any -> any any (msg:"Password attack: password 123123"; flow:to_server,established; http.request_body; content:"password=123123&"; nocase; sid:1002012;)
-alert http any any -> any any (msg:"Password attack: password 111111"; flow:to_server,established; http.request_body; content:"password=111111&"; nocase; sid:1002013;)
-alert http any any -> any any (msg:"Password attack: password 12345678910"; flow:to_server,established; http.request_body; content:"password=12345678910&"; nocase; sid:1002014;)
-alert http any any -> any any (msg:"Password attack: password P@ssw0rd"; flow:to_server,established; http.request_body; content:"password=P@ssw0rd&"; nocase; sid:1002015;)
-alert http any any -> any any (msg:"Password attack: password Password"; flow:to_server,established; http.request_body; content:"password=Password&"; nocase; sid:1002016;)
-alert http any any -> any any (msg:"Password attack: password Aa@123456"; flow:to_server,established; http.request_body; content:"password=Aa@123456&"; nocase; sid:1002017;)
-alert http any any -> any any (msg:"Password attack: password admintelecom"; flow:to_server,established; http.request_body; content:"password=admintelecom&"; nocase; sid:1002018;)
-alert http any any -> any any (msg:"Password attack: password Admin@123"; flow:to_server,established; http.request_body; content:"password=Admin@123&"; nocase; sid:1002019;)
-alert http any any -> any any (msg:"Password attack: password 112233"; flow:to_server,established; http.request_body; content:"password=112233&"; nocase; sid:1002020;)
+alert http any any -> any any (msg:"Brute force: repeated 403 responses"; flow:from_server,established; http.stat_code; content:"403"; detection_filter: track by_src, count 20, seconds 60; sid:1004002;)
 
-alert http any any -> any any (msg:"Vulnerability scanner: WPScan user-agent"; flow:to_server,established; http.user_agent; content:"WPScan"; nocase; sid:1008003;)
-alert http any any -> any any (msg:"Vulnerability scanner: Gobuster user-agent"; flow:to_server,established; http.user_agent; content:"gobuster"; nocase; sid:1008004;)
-alert http any any -> any any (msg:"Vulnerability scanner: Acunetix user-agent"; flow:to_server,established; http.user_agent; content:"Acunetix"; nocase; sid:1008005;)
-alert http any any -> any any (msg:"Vulnerability scanner: Nmap user-agent"; flow:to_server,established; http.user_agent; content:"Nmap Scripting Engine"; nocase; sid:1008006;)
-alert http any any -> any any (msg:"Vulnerability scanner: Masscan user-agent"; flow:to_server,established; http.user_agent; content:"masscan"; nocase; sid:1008007;)
-alert http any any -> any any (msg:"Vulnerability scanner: Nuclei user-agent"; flow:to_server,established; http.user_agent; content:"Nuclei"; nocase; sid:1008008;)
-alert http any any -> any any (msg:"Vulnerability scanner: Feroxbuster user-agent"; flow:to_server,established; http.user_agent; content:"feroxbuster"; nocase; sid:1008009;)
-alert http any any -> any any (msg:"Vulnerability scanner: ffuf user-agent"; flow:to_server,established; http.user_agent; content:"Fuzz Faster U Fool"; nocase; sid:1008010;)
-alert http any any -> any any (msg:"Vulnerability scanner: dirsearch user-agent"; flow:to_server,established; http.user_agent; content:"dirsearch"; nocase; sid:1008011;)
-alert http any any -> any any (msg:"Vulnerability scanner: Nikto user-agent detected"; flow:to_server,established; http.user_agent; content:"Nikto"; nocase; sid:1007001;)
+alert http any any -> any any (msg:"Brute force: repeated 429 responses"; flow:from_server,established; http.stat_code; content:"429"; detection_filter: track by_src, count 20, seconds 60; sid:1004003;)
 
-alert http any any -> any any (msg:"Vulnerability scanner: Shellshock CVE-2014-6271"; flow:to_server,established; http.user_agent; content:"() { :|3b| }|3b|"; sid:1007003;)
-alert http any any -> any any (msg:"Vulnerability scanner: path traversal attempt"; flow:to_server,established; http.uri; pcre:"/\.\.\/\.\.\/\.\.\/\.\.\//i"; sid:1007005;)
-alert http any any -> any any (msg:"Vulnerability scanner: encoded path traversal"; flow:to_server,established; http.uri; pcre:"/(%2e%2e|%252e%252e|\.\.%2f|%2e%2e%2f)/i"; sid:1007006;)
-alert http any any -> any any (msg:"Vulnerability scanner: system file access attempt"; flow:to_server,established; http.uri; pcre:"/(etc\/passwd|boot\.ini|win\.ini|windows\/win|etc\/shadow)/i"; sid:1007007;)
-alert http any any -> any any (msg:"Vulnerability scanner: XSS test payload"; flow:to_server,established; http.uri; pcre:"/<script>alert\(/i"; sid:1007008;)
-alert http any any -> any any (msg:"Vulnerability scanner: RFI test"; flow:to_server,established; http.uri; pcre:"/(http:\/\/|https:\/\/).*(rfiinc|test\.txt|shell\.txt)/i"; sid:1007009;)
-alert http any any -> any any (msg:"Vulnerability scanner: SQL debug parameter"; flow:to_server,established; http.uri; pcre:"/sql_debug=/i"; sid:1007010;)
+alert http any any -> any any (msg:"Brute force: common username with failed login"; flow:to_server,established; http.request_body; pcre:"/(?:^|&)username=(?:root|admin|user|test|guest)(?:&|$)/i"; http.stat_code; content:"401"; detection_filter: track by_src, count 5, seconds 60; sid:1004001;)
+
+alert http any any -> any any (msg:"Brute force: common password with failed login"; flow:to_server,established; http.request_body; pcre:"/(?:^|&)password=(?:123456|admin|12345678|123456789|12345|password|Aa123456|1234567890|Pass@123|admin123|1234567|123123|111111|P@ssw0rd|Admin@123|112233|admintelecom|Aa@123456)(?:&|$)/i"; http.stat_code; content:"401"; detection_filter: track by_src, count 5, seconds 60; sid:1002001;)
+
+# Vulnerability scanner
+
+alert http any any -> any any (msg:"Vulnerability scanner: WPScan"; flow:to_server,established; http.user_agent; content:"WPScan"; nocase; fast_pattern; sid:1008003;)
+
+alert http any any -> any any (msg:"Vulnerability scanner: Gobuster"; flow:to_server,established; http.user_agent; content:"gobuster"; nocase; fast_pattern; sid:1008004;)
+
+alert http any any -> any any (msg:"Vulnerability scanner: Acunetix"; flow:to_server,established; http.user_agent; content:"Acunetix"; nocase; fast_pattern; sid:1008005;)
+
+alert http any any -> any any (msg:"Vulnerability scanner: Nmap"; flow:to_server,established; http.user_agent; content:"Nmap Scripting Engine"; nocase; fast_pattern; sid:1008006;)
+
+alert http any any -> any any (msg:"Vulnerability scanner: Masscan"; flow:to_server,established; http.user_agent; content:"masscan"; nocase; fast_pattern; sid:1008007;)
+
+alert http any any -> any any (msg:"Vulnerability scanner: Nuclei"; flow:to_server,established; http.user_agent; content:"Nuclei"; nocase; fast_pattern; sid:1008008;)
+
+alert http any any -> any any (msg:"Vulnerability scanner: Feroxbuster"; flow:to_server,established; http.user_agent; content:"feroxbuster"; nocase; fast_pattern; sid:1008009;)
+
+alert http any any -> any any (msg:"Vulnerability scanner: ffuf"; flow:to_server,established; http.user_agent; content:"Fuzz Faster U Fool"; nocase; fast_pattern; sid:1008010;)
+
+alert http any any -> any any (msg:"Vulnerability scanner: dirsearch"; flow:to_server,established; http.user_agent; content:"dirsearch"; nocase; fast_pattern; sid:1008011;)
+
+alert http any any -> any any (msg:"Vulnerability scanner: Nikto"; flow:to_server,established; http.user_agent; content:"Nikto"; nocase; fast_pattern; sid:1007001;)
+
+# Web shell
+
+alert http any any -> any any (msg:"Web shell: PHP file requested from uploads folder"; flow:to_server,established; http.uri; content:"/uploads/"; nocase; fast_pattern; content:".php"; nocase; within:100; xbits:set,webshell_run,track ip_dst,expire 60; sid:1000401;)
+
+alert http any any -> any any (msg:"Web shell: PHP filename in file upload"; flow:to_server,established; http.request_body; content:"filename=|22|"; nocase; fast_pattern; content:".php"; nocase; within:50; sid:1000402;)
+
+alert http any any -> any any (msg:"Web shell: PHP code in file upload"; flow:to_server,established; http.request_body; content:"<?php"; nocase; fast_pattern; content:".php"; nocase; within:200; sid:1000403;)
+
+alert http any any -> any any (msg:"Web shell: shell function in file upload"; flow:to_server,established; http.request_body; content:"shell_exec("; nocase; fast_pattern; sid:1000404;)
+
+alert http any any -> any any (msg:"Web shell: command parameter in URI"; flow:to_server,established; http.uri; content:".php?cmd="; nocase; fast_pattern; sid:1000405;)
+
+alert http any any -> any any (msg:"Web shell: curl requesting PHP in uploads"; flow:to_server,established; http.user_agent; content:"curl/"; startswith; http.uri; content:"/uploads/"; nocase; fast_pattern; content:".php"; nocase; within:100; sid:1000406;)
+
+alert tcp any any -> any any (msg:"Web shell: outbound connection after upload"; flow:to_server,established; flags:S; xbits:isset,webshell_run,track ip_src; detection_filter: track by_src, count 5, seconds 60; sid:1000407;)
+
+# Path traversal, RFI, enumeration
+
+alert http any any -> any any (msg:"Vulnerability scanner: Shellshock"; flow:to_server,established; http.user_agent; content:"() { :|3b| }|3b|"; sid:1007003;)
+
+alert http any any -> any any (msg:"Vulnerability scanner: Path traversal attempt"; flow:to_server,established; http.uri; pcre:"/(?:\.\.\/){3,}/i"; sid:1007005;)
+
+alert http any any -> any any (msg:"Vulnerability scanner: Path traversal attempt encoded"; flow:to_server,established; http.uri; pcre:"/(?:%2e%2e|%252e%252e|\.\.%2f|%2e%2e%2f)/i"; sid:1007006;)
+
+alert http any any -> any any (msg:"Vulnerability scanner: system file access attempt"; flow:to_server,established; http.uri; pcre:"/(?:etc\/passwd|boot\.ini|win\.ini|windows\/win|etc\/shadow)/i"; sid:1007007;)
+
 alert http any any -> any any (msg:"Vulnerability scanner: excessive 404 responses"; flow:from_server,established; http.stat_code; content:"404"; detection_filter: track by_src, count 50, seconds 60; sid:1007011;)
-alert http any any -> any any (msg:"Vulnerability scanner: Nikto file extension enumeration"; flow:to_server,established; http.uri; pcre:"/\.(cgi|pl|sh|py|conf|bak|old|swp|inc|sql|zip|tar|gz)$/i"; detection_filter: track by_src, count 20, seconds 60; sid:1007012;)
+
+alert http any any -> any any (msg:"Vulnerability scanner: excessive 401 responses"; flow:from_server,established; http.stat_code; content:"401"; detection_filter: track by_src, count 50, seconds 60; sid:1007011;)
+
+alert http any any -> any any (msg:"Vulnerability scanner: file extension enumeration"; flow:to_server,established; http.uri; pcre:"/\.(?:cgi|pl|sh|py|conf|bak|old|swp|inc|sql|zip|tar|gz)$/i"; detection_filter: track by_src, count 20, seconds 60; sid:1007012;)
+
 alert http any any -> any any (msg:"Vulnerability scanner: random prefix enumeration"; flow:to_server,established; http.uri; pcre:"/\/[a-zA-Z0-9]{8}\.[a-zA-Z0-9]+$/"; detection_filter: track by_src, count 20, seconds 60; sid:1007014;)
 
-alert http any any -> any any (msg:"Uploading attack: web shell in upload directory"; flow:to_server,established; http.uri; pcre:"/\/uploads?\/[^\/]+\.(php|phtml|php[0-9]|pht|phar)(\?|$)/i"; sid:1009001;)
-alert http any any -> any any (msg:"Uploading attack: repeated GET to PHP in upload dir"; flow:to_server,established; http.method; content:"GET"; http.uri; pcre:"/\/uploads?\/.*\.(php|phtml|php[0-9]|pht|phar)/i"; detection_filter: track by_src, count 20, seconds 60; sid:1009003;)
-alert tcp any any -> any any (msg:"Uploading attack: outbound data exfiltration"; flow:to_server,established; dsize:>100; detection_filter: track by_src, count 10, seconds 60; sid:1009005;)
-alert tcp any any -> any any (msg:"Uploading attack: reverse shell to attacker"; flow:to_server,established; detection_filter: track by_src, count 3, seconds 60; sid:1009006;)
-alert tcp any any -> any any (msg:"Uploading attack: frequent outbound connections"; flow:to_server,established; flags:S; threshold:type both, track by_src, count 50, seconds 60; sid:1009200;)
-alert tcp any any -> any any (msg:"Uploading attack: frequent inbound connections"; flow:to_client,established; flags:S; threshold:type both, track by_dst, count 50, seconds 60; sid:1009201;)
-alert tcp any any -> any any (msg:"Uploading attack: high outbound data volume"; flow:to_server,established; dsize:>500; threshold:type both, track by_src, count 20, seconds 60; sid:1009202;)
-alert tcp any any -> any any (msg:"Uploading attack: high entropy payload"; flow:to_server,established; dsize:>200; pcre:"/[\x80-\xff]{50,}/"; threshold:type both, track by_src, count 5, seconds 60; sid:1009206;)
+# XSS
 
-alert tcp any any -> any any (msg:"GPL SQL MYSQL root login attempt"; flow:established,to_server; content:"|0A 00 00 01 85 04 00 00 80|root|00|"; sid:2101775;)
-#alert tcp any any-> any any (msg:"GPL SQL MYSQL show databases attempt"; flow:established,to_server; content:"|0F 00 00 00 03|show databases"; classtype: sid:2101776;)
-alert tcp any any -> any any (msg:"GPL SQL sa brute force failed login unicode attempt"; flow:established,to_client; content:"L|00|o|00|g|00|i|00|n|00| |00|f|00|a|00|i|00|l|00|e|00|d|00| |00|f|00|o|00|r|00| |00|u|00|s|00|e|00|r|00| |00|'|00|s|00|a|00|'|00|"; threshold:type threshold, track by_src, count 5, seconds 2; sid:2103273;)
-alert tcp any any -> any any (msg:"GPL SQL sa login failed"; flow:established,to_client; content:"Login failed for user 'sa'"; offset:83; sid:2100680;)
-alert tcp any any -> any any (msg:"GPL SQL sa login failed"; flow:established,to_client; content:"Login failed for user 'sa'"; sid:2100688;)
-alert tcp any any -> any any (msg:"ET SQL MySQL mysql.user Dump (Used in Metasploit Auth-Bypass Module)"; flow:established,to_server; content:"SELECT|20|user|2c|password|20|from|20|mysql|2e|user"; sid:2014910;)
-alert tcp any any -> any any (msg:"GPL SQL shellcode attempt"; flow:established,to_server; content:"9 |D0 00 92 01 C2 00|R|00|U|00|9 |EC 00|"; sid:2100692;)
-alert tcp any any -> any any (msg:"GPL SQL MSSQL shellcode attempt 2"; flow:established,to_server; content:"H|00|%|00|x|00|w|00 90 00 90 00 90 00 90 00 90 00|3|00 C0 00|P|00|h|00|.|00|"; sid:2100693;)
-alert tcp any any -> any any (msg:"GPL SQL shellcode attempt"; flow:established,to_server; content:"H|00|%|00|x|00|w|00 90 00 90 00 90 00 90 00 90 00|3|00 C0 00|P|00|h|00|.|00|"; sid:2100694;)
-alert tcp any any -> any any (msg:"GPL SQL MYSQL root login attempt"; flow:established,to_server; content:"|0A 00 00 01 85 04 00 00 80|root|00|"; sid:2101786;)
-#alert tcp any any-> any any (msg:"GPL SQL MYSQL show databases attempt"; flow:established,to_server; content:"|0F 00 00 00 03|show databases"; classtype: sid:2101781;)
+alert http any any -> any any (msg:"XSS: script tag"; flow:to_server,established; http.uri; content:"<script"; nocase; fast_pattern; sid:1000001;)
 
-alert http any any -> any any (msg:"ET WEB_SERVER Possible SQL Injection (declare) in HTTP Request Body"; flow:established,to_server; http.request_body; content:"DECLARE|20|"; fast_pattern; nocase; content:"CHAR("; nocase; content:"CAST("; nocase; sid:2053462;)
-alert http any any -> any any (msg:"ET WEB_SERVER Possible SQL Injection Obfuscated by REVERSE function in HTTP Request Body"; flow:established,to_server; http.request_body; content:"REVERSE"; nocase; pcre:"/^(?:\x28|\x20+\x28)/R"; sid:2053464;)
+alert http any any -> any any (msg:"XSS: script tag (encoded)"; flow:to_server,established; http.request_body; content:"%3Cscript"; nocase; fast_pattern; sid:1000002;)
 
-alert http any any -> any any (msg:"ET WEB_SERVER Script tag in URI Possible Cross Site Scripting Attempt"; flow:established,to_server; http.uri; content:"</script>"; nocase; reference:url,ha.ckers.org/xss.html; sid:2009714;)
-alert http any any -> any any (msg:"ET WEB_SERVER Onmouseover= in URI - Likely Cross Site Scripting Attempt"; flow:established,to_server; http.uri; content:"onmouseover="; nocase; sid:2009715;)
-alert http any any -> any any (msg:"ET WEB_SERVER Cisco BBSM Captive Portal AccesCodeStart.asp Cross-Site Scripting Attempt"; flow:established,to_server; http.uri; content:"|2F|ekgnkm|2F|AccessCodeStart|2E|asp"; nocase; pcre:"/(script|onmouse[a-z]+|onkey[a-z]+|onload|onunload|ondragdrop|onblur|onfocus|onclick|ondblclick|onsubmit|onreset|onselect|onchange)/i"; sid:2010460;)
-alert http any any -> any any (msg:"ET WEB_SERVER Possible Barracuda IM Firewall smtp_test.cgi Cross-Site Scripting Attempt"; flow:established,to_server; http.uri; content:"|2F|cgi|2D|mod|2F|smtp|5F|test|2E|cgi"; nocase; content:"email|3D|"; nocase; content:"hostname|3D|"; nocase; content:"default|5F|domain|3D|"; nocase; pcre:"/(script|img|src|alert|onmouse|onkey|onload|ondragdrop|onblur|onfocus|onclick)/i"; sid:2010462;)
-alert http any any -> any any (msg:"ET WEB_SERVER Possible Cisco Subscriber Edge Services Manager Cross Site Scripting/HTML Injection Attempt"; flow:established,to_server; http.uri; content:"/servlet/JavascriptProbe"; nocase; content:"documentElement=true"; nocase; content:"regexp=true"; nocase; content:"frames=true"; sid:2010622;)
-alert http any any -> any any (msg:"ET WEB_SERVER HP LaserJet Printer Cross Site Scripting Attempt"; flow:established,to_server; http.uri; content:"/support_param.html/config"; nocase; content:"Admin_Name=&Admin_Phone="; nocase; content:"Product_URL="; nocase; pcre:"/(script|onmouse[a-z]+|onkey[a-z]+|onload|onunload|ondragdrop|onblur|onfocus|onclick|ondblclick|onsubmit|onreset|onselect|onchange).+Apply\x3DApply/i"; sid:2010919;)
-alert http any any -> any any (msg:"ET WEB_SERVER Microsoft SharePoint Server 2007 _layouts/help.aspx Cross Site Scripting Attempt"; flow:established,to_server; http.uri; content:"/_layouts/help.aspx"; nocase; content:"cid0="; nocase; pcre:"/cid0\x3d.+(script|alert|onmouse[a-z]+|onkey[a-z]+|onload|onunload|ondragdrop|onblur|onfocus|onclick|ondblclick|onsubmit|onreset|onselect|onchange)/i"; sid:2011073;)
-alert http any any -> any any (msg:"ET WEB_SERVER 3Com Intelligent Management Center Cross Site Scripting Attempt"; flow:established,to_server; http.uri; content:"/imc/login.jsf"; nocase; content:"loginForm"; nocase; content:"javax.faces.ViewState="; nocase; pcre:"/ViewState\x3D.+(script|alert|onmouse[a-z]+|onkey[a-z]+|onload|onunload|ondragdrop|onblur|onfocus|onclick|ondblclick|onsubmit|onreset|onselect|onchange)/i"; sid:2011145;)
-alert http any any -> any any (msg:"ET WEB_SERVER possible IBM Rational Directory Server (RDS) Help system href Cross Site Scripting Attempt"; flow:established,to_server; http.uri; content:"/rds-help/advanced/deferredView.jsp?"; nocase; content:"href="; nocase; pcre:"/^.+(?:script|alert|onmouse[a-z]+|onkey[a-z]+|onload|onunload|ondragdrop|onblur|onfocus|onclick|ondblclick|onsubmit|onreset|onselect|onchange|javascript)/Ri"; sid:2014987;)
+alert http any any -> any any (msg:"XSS: svg tag"; flow:to_server,established; http.uri; content:"<svg"; nocase; fast_pattern; sid:1000010;)
 
+alert http any any -> any any (msg:"XSS: svg tag (encoded)"; flow:to_server,established; http.request_body; content:"%3Csvg"; nocase; fast_pattern; sid:1000020;)
 
-alert http any any -> any any (msg:"ET WEB_SERVER PHP Large Subnormal Double Precision Floating Point Number PHP DoS in URI"; flow:established,to_server; http.uri; content:"2.2250738585072011e-308"; nocase; sid:2012150;)
-alert tcp any any -> any any (msg:"ET WEB_SERVER PHP Large Subnormal Double Precision Floating Point Number PHP DoS Inbound"; flow:established,to_server; content:"2.2250738585072011e-308"; nocase; sid:2012151;)
+alert http any any -> any any (msg:"XSS: img tag"; flow:to_server,established; http.uri; content:"<img"; nocase; fast_pattern; sid:1000011;)
 
-alert http any any -> any any (msg:"ET WEB_SERVER Apache APR apr_fnmatch Stack Overflow Denial of Service"; flow:established,to_server; urilen:>1400; http.uri; content:"|2F 3F|P|3D 2A 3F 2A 3F 2A 3F 2A 3F 2A 3F|"; pcre:"/(?:\x2a\x3f){700}/"; sid:2012926;)
+alert http any any -> any any (msg:"XSS: iframe tag"; flow:to_server,established; http.uri; content:"<iframe"; nocase; fast_pattern; sid:1000012;)
 
-alert http any any -> any any (msg:"ET WEB_SERVER Generic Web Server Hashing Collision Attack"; flow:established,to_server; http.content_type; content:"application|2f|x-www-form-urlencoded"; nocase; startswith; http.request_body; pcre:"/([^=]+=[^&]*&){500}/O"; sid:2014045;)
-alert http any any -> any any (msg:"ET WEB_SERVER Generic Web Server Hashing Collision Attack 2"; flow:established,to_server; http.content_type; content:"multipart/form-data"; nocase; startswith; http.request_body; pcre:"/(\r\nContent-Disposition\x3a\s+form-data\x3b[^\r\n]+\r\n\r\n.+?){250}/Osmi"; sid:2014046;)
-alert http any any -> any any (msg:"ET WEB_SERVER Unusually Fast HTTP Requests With Referer Url Matching DoS Tool"; flow:established,to_server; threshold: type both, track by_src, count 15, seconds 30; http.referer; content:"/slowhttptest/"; fast_pattern; sid:2014103;)
-alert http any any -> any any (msg:"ET WEB_SERVER Possible IIS Integer Overflow DoS (CVE-2015-1635)"; flow:established,to_server; http.request_header; header_lowercase; content:"range|3a 20|"; startswith; content:"18446744073709551615"; fast_pattern; distance:0; sid:2020912;)
-#alert http _NET any -> $HTTP_SERVERS any (msg:"ET SCAN Simple Slowloris Flooder"; flow:established,to_server; threshold:type limit, track by_src, count 1, seconds 300; http.method; content:"POST"; http.header; content:"Content-length|3a 20|5235|0d 0a|"; fast_pattern; http.header_names; content:!"User-Agent|0d 0a|"; reference:url,www.imperva.com/docs/HII_Denial_of_Service_Attacks-Trends_Techniques_and_Technologies.pdf; classtype:web-application-attack; sid:2016033; rev:6; metadata:created_at 2012_12_14, confidence Medium, signature_severity Informational, tag Description_Generated_By_Proofpoint_Nexus, updated_at 2024_04_07;)
+alert http any any -> any any (msg:"XSS: script tag in URI"; flow:to_server,established; http.uri; content:"</script>"; nocase; fast_pattern; sid:2009714;)
 
+alert http any any -> any any (msg:"XSS: JS event onerror"; flow:to_server,established; http.uri; content:"onerror="; nocase; fast_pattern; sid:1000003;)
+
+alert http any any -> any any (msg:"XSS: JS event onload"; flow:to_server,established; http.uri; content:"onload="; nocase; fast_pattern; sid:1000004;)
+
+alert http any any -> any any (msg:"XSS: JS event onfocus"; flow:to_server,established; http.uri; content:"onfocus="; nocase; fast_pattern; sid:1000014;)
+
+alert http any any -> any any (msg:"XSS: JS event ontoggle"; flow:to_server,established; http.uri; content:"ontoggle"; nocase; fast_pattern; sid:1000013;)
+
+alert http any any -> any any (msg:"XSS: onerror in body"; flow:to_server,established; http.request_body; content:"onerror="; nocase; fast_pattern; sid:1000017;)
+
+alert http any any -> any any (msg:"XSS: onmouseover in body"; flow:to_server,established; http.request_body; content:"onmouseover="; nocase; fast_pattern; sid:1000018;)
+
+alert http any any -> any any (msg:"XSS: onmouseover in URI"; flow:to_server,established; http.uri; content:"onmouseover="; nocase; fast_pattern; sid:2009715;)
+
+alert http any any -> any any (msg:"XSS: javascript: URI"; flow:to_server,established; http.uri; content:"javascript:"; nocase; fast_pattern; sid:1000006;)
+
+alert http any any -> any any (msg:"XSS: alert() call"; flow:to_server,established; http.uri; content:"alert("; nocase; fast_pattern; sid:1000007;)
+
+alert http any any -> any any (msg:"XSS: confirm() call"; flow:to_server,established; http.uri; content:"confirm("; nocase; fast_pattern; sid:1000015;)
+
+alert http any any -> any any (msg:"XSS: prompt() call"; flow:to_server,established; http.uri; content:"prompt("; nocase; fast_pattern; sid:1000016;)
+
+alert http any any -> any any (msg:"XSS: confirm() in body (encoded)"; flow:to_server,established; http.request_body; content:"confirm%28"; nocase; fast_pattern; sid:1000019;)
+
+# Port scanning
+
+alert tcp any any -> any any (msg:"Port scan: SYN flood from one host"; flags:S; detection_filter:track by_src, count 30, seconds 10; sid:1000201;)
+
+alert tcp any any -> any any (msg:"Port scan: many closed port replies"; flags:RA; detection_filter:track by_dst, count 20, seconds 60; sid:1000202;)
+
+alert tcp any any -> any any (msg:"Port scan: NULL scan"; flags:0; sid:1000203;)
+
+alert tcp any any -> any any (msg:"Port scan: FIN scan"; flags:F; sid:1000204;)
+
+alert tcp any any -> any any (msg:"Port scan: Xmas scan"; flags:FPU; sid:1000205;)
+
+alert tcp any any -> any any (msg:"Port scan: SYN+FIN invalid"; flags:SF; sid:1000206;)
+
+alert tcp any any -> any any (msg:"Port scan: Nmap SYN window 1024"; flags:S; window:1024; sid:1000207;)
+
+alert icmp any any -> any any (msg:"Port scan: UDP port unreachable"; itype:3; icode:3; detection_filter:track by_dst, count 20, seconds 60; sid:1000208;)
+
+alert tcp any any -> any any (msg:"Port scan: SYN window 512"; flags:S; window:512; sid:1000101;)
+
+alert tcp any any -> any any (msg:"Port scan: SYN without options"; flags:S; tcp.hdr; bsize:20; sid:1000102;)

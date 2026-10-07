@@ -1,7 +1,0 @@
-alert http any any -> any any (msg:"PHP file requested from uploads folder"; flow:to_server; http.uri; content:"/uploads/"; nocase; content:".php"; nocase; distance:0; xbits:set,webshell_run,track ip_dst,expire 60; sid:1000401; rev:2;)
-alert http any any -> any any (msg:"PHP filename in file upload"; flow:to_server; http.request_body; content:"filename=|22|"; nocase; content:".php"; nocase; distance:0; sid:1000402; rev:1;)
-alert http any any -> any any (msg:"PHP code in file upload"; flow:to_server; http.request_body; content:"<?php"; nocase; sid:1000403; rev:1;)
-alert http any any -> any any (msg:"Shell function in file upload"; flow:to_server; http.request_body; content:"shell_exec("; nocase; sid:1000404; rev:1;)
-alert http any any -> any any (msg:"Web shell command parameter"; flow:to_server; http.uri; content:".php?cmd="; nocase; sid:1000405; rev:1;)
-alert http any any -> any any (msg:"curl requesting PHP file in uploads folder"; flow:to_server; http.user_agent; content:"curl/"; startswith; http.uri; content:"/uploads/"; nocase; content:".php"; nocase; sid:1000406; rev:1;)
-alert tcp any any -> any any (msg:"Server opened outbound connection after running uploaded PHP file"; flow:to_server; flags:S; xbits:isset,webshell_run,track ip_src; sid:1000407; rev:1;)
