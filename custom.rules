@@ -12,11 +12,11 @@ alert http any any -> any any (msg:"SQLi: OR/AND tautology in URI"; flow:to_serv
 
 alert http any any -> any any (msg:"SQLi: OR/AND tautology in header"; flow:to_server,established; http.header; pcre:"/(?:\bOR\b|\bAND\b)\s+(?:'?[^']*'?\s*=\s*'?[^']*'?|\d+\s*=\s*\d+)/i"; sid:1000013;)
 
-alert http any any -> any any (msg:"SQLi: stacked query in body"; flow:to_server,established; http.request_body; pcre:"/;\s*(?:SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC)\b/i"; sid:1000002;)
+alert http any any -> any any (msg:"SQLi: stacked query in body"; flow:to_server,established; http.request_body; pcre:"/\x3b\s*(?:SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC)\b/i"; sid:1000002;)
 
-alert http any any -> any any (msg:"SQLi: stacked query in URI"; flow:to_server,established; http.uri; pcre:"/;\s*(?:SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC)\b/i"; sid:1000014;)
+alert http any any -> any any (msg:"SQLi: stacked query in URI"; flow:to_server,established; http.uri; pcre:"/\x3b\s*(?:SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC)\b/i"; sid:1000014;)
 
-alert http any any -> any any (msg:"SQLi: stacked query in header"; flow:to_server,established; http.header; pcre:"/;\s*(?:SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC)\b/i"; sid:1000015;)
+alert http any any -> any any (msg:"SQLi: stacked query in header"; flow:to_server,established; http.header; pcre:"/\x3b\s*(?:SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC)\b/i"; sid:1000015;)
 
 alert http any any -> any any (msg:"SQLi: comment + keyword in body"; flow:to_server,established; http.request_body; pcre:"/(?:--|#|\/\*)[^\n]{0,20}\b(?:SELECT|UNION|INSERT|UPDATE|DELETE|DROP|OR|AND)\b/i"; sid:1000003;)
 
@@ -68,15 +68,15 @@ alert http any any -> any any (msg:"SQLi: REVERSE in header"; flow:established,t
 
 # Brute force
 
-alert http any any -> any any (msg:"Brute force: repeated 401 responses"; flow:to_server,established; http.method; content:"POST"; http.stat_code; content:"401"; detection_filter: track by_src, count 10, seconds 60; sid:2000230;)
+alert http any any => any any (msg:"Brute force: repeated 401 responses"; flow:established; http.method; content:"POST"; http.stat_code; content:"401"; detection_filter: track by_src, count 10, seconds 60; sid:2000230;)
 
 alert http any any -> any any (msg:"Brute force: repeated 403 responses"; flow:from_server,established; http.stat_code; content:"403"; detection_filter: track by_src, count 20, seconds 60; sid:1004002;)
 
 alert http any any -> any any (msg:"Brute force: repeated 429 responses"; flow:from_server,established; http.stat_code; content:"429"; detection_filter: track by_src, count 20, seconds 60; sid:1004003;)
 
-alert http any any -> any any (msg:"Brute force: common username with failed login"; flow:to_server,established; http.request_body; pcre:"/(?:^|&)username=(?:root|admin|user|test|guest)(?:&|$)/i"; http.stat_code; content:"401"; detection_filter: track by_src, count 5, seconds 60; sid:1004001;)
+alert http any any => any any (msg:"Brute force: common username with failed login"; flow:established; http.request_body; pcre:"/(?:^|&)username=(?:root|admin|user|test|guest)(?:&|$)/i"; http.stat_code; content:"401"; detection_filter: track by_src, count 5, seconds 60; sid:1004001;)
 
-alert http any any -> any any (msg:"Brute force: common password with failed login"; flow:to_server,established; http.request_body; pcre:"/(?:^|&)password=(?:123456|admin|12345678|123456789|12345|password|Aa123456|1234567890|Pass@123|admin123|1234567|123123|111111|P@ssw0rd|Admin@123|112233|admintelecom|Aa@123456)(?:&|$)/i"; http.stat_code; content:"401"; detection_filter: track by_src, count 5, seconds 60; sid:1002001;)
+alert http any any => any any (msg:"Brute force: common password with failed login"; flow:established; http.request_body; pcre:"/(?:^|&)password=(?:123456|admin|12345678|123456789|12345|password|Aa123456|1234567890|Pass@123|admin123|1234567|123123|111111|P@ssw0rd|Admin@123|112233|admintelecom|Aa@123456)(?:&|$)/i"; http.stat_code; content:"401"; detection_filter: track by_src, count 5, seconds 60; sid:1002001;)
 
 # Vulnerability scanner
 
@@ -128,7 +128,7 @@ alert http any any -> any any (msg:"Vulnerability scanner: system file access at
 
 alert http any any -> any any (msg:"Vulnerability scanner: excessive 404 responses"; flow:from_server,established; http.stat_code; content:"404"; detection_filter: track by_src, count 50, seconds 60; sid:1007011;)
 
-alert http any any -> any any (msg:"Vulnerability scanner: excessive 401 responses"; flow:from_server,established; http.stat_code; content:"401"; detection_filter: track by_src, count 50, seconds 60; sid:1007011;)
+alert http any any -> any any (msg:"Vulnerability scanner: excessive 401 responses"; flow:from_server,established; http.stat_code; content:"401"; detection_filter: track by_src, count 50, seconds 60; sid:1007013;)
 
 alert http any any -> any any (msg:"Vulnerability scanner: file extension enumeration"; flow:to_server,established; http.uri; pcre:"/\.(?:cgi|pl|sh|py|conf|bak|old|swp|inc|sql|zip|tar|gz)$/i"; detection_filter: track by_src, count 20, seconds 60; sid:1007012;)
 
@@ -136,43 +136,43 @@ alert http any any -> any any (msg:"Vulnerability scanner: random prefix enumera
 
 # XSS
 
-alert http any any -> any any (msg:"XSS: script tag"; flow:to_server,established; http.uri; content:"<script"; nocase; fast_pattern; sid:1000001;)
+alert http any any -> any any (msg:"XSS: script tag"; flow:to_server,established; http.uri; content:"<script"; nocase; fast_pattern; sid:1005001;)
 
-alert http any any -> any any (msg:"XSS: script tag (encoded)"; flow:to_server,established; http.request_body; content:"%3Cscript"; nocase; fast_pattern; sid:1000002;)
+alert http any any -> any any (msg:"XSS: script tag (encoded)"; flow:to_server,established; http.request_body; content:"%3Cscript"; nocase; fast_pattern; sid:1000147;)
 
-alert http any any -> any any (msg:"XSS: svg tag"; flow:to_server,established; http.uri; content:"<svg"; nocase; fast_pattern; sid:1000010;)
+alert http any any -> any any (msg:"XSS: svg tag"; flow:to_server,established; http.uri; content:"<svg"; nocase; fast_pattern; sid:1000148;)
 
-alert http any any -> any any (msg:"XSS: svg tag (encoded)"; flow:to_server,established; http.request_body; content:"%3Csvg"; nocase; fast_pattern; sid:1000020;)
+alert http any any -> any any (msg:"XSS: svg tag (encoded)"; flow:to_server,established; http.request_body; content:"%3Csvg"; nocase; fast_pattern; sid:1000149;)
 
-alert http any any -> any any (msg:"XSS: img tag"; flow:to_server,established; http.uri; content:"<img"; nocase; fast_pattern; sid:1000011;)
+alert http any any -> any any (msg:"XSS: img tag"; flow:to_server,established; http.uri; content:"<img"; nocase; fast_pattern; sid:1000176;)
 
-alert http any any -> any any (msg:"XSS: iframe tag"; flow:to_server,established; http.uri; content:"<iframe"; nocase; fast_pattern; sid:1000012;)
+alert http any any -> any any (msg:"XSS: iframe tag"; flow:to_server,established; http.uri; content:"<iframe"; nocase; fast_pattern; sid:1000150;)
 
 alert http any any -> any any (msg:"XSS: script tag in URI"; flow:to_server,established; http.uri; content:"</script>"; nocase; fast_pattern; sid:2009714;)
 
-alert http any any -> any any (msg:"XSS: JS event onerror"; flow:to_server,established; http.uri; content:"onerror="; nocase; fast_pattern; sid:1000003;)
+alert http any any -> any any (msg:"XSS: JS event onerror"; flow:to_server,established; http.uri; content:"onerror="; nocase; fast_pattern; sid:1005003;)
 
-alert http any any -> any any (msg:"XSS: JS event onload"; flow:to_server,established; http.uri; content:"onload="; nocase; fast_pattern; sid:1000004;)
+alert http any any -> any any (msg:"XSS: JS event onload"; flow:to_server,established; http.uri; content:"onload="; nocase; fast_pattern; sid:1005004;)
 
-alert http any any -> any any (msg:"XSS: JS event onfocus"; flow:to_server,established; http.uri; content:"onfocus="; nocase; fast_pattern; sid:1000014;)
+alert http any any -> any any (msg:"XSS: JS event onfocus"; flow:to_server,established; http.uri; content:"onfocus="; nocase; fast_pattern; sid:1005014;)
 
-alert http any any -> any any (msg:"XSS: JS event ontoggle"; flow:to_server,established; http.uri; content:"ontoggle"; nocase; fast_pattern; sid:1000013;)
+alert http any any -> any any (msg:"XSS: JS event ontoggle"; flow:to_server,established; http.uri; content:"ontoggle"; nocase; fast_pattern; sid:1005013;)
 
-alert http any any -> any any (msg:"XSS: onerror in body"; flow:to_server,established; http.request_body; content:"onerror="; nocase; fast_pattern; sid:1000017;)
+alert http any any -> any any (msg:"XSS: onerror in body"; flow:to_server,established; http.request_body; content:"onerror="; nocase; fast_pattern; sid:1005017;)
 
-alert http any any -> any any (msg:"XSS: onmouseover in body"; flow:to_server,established; http.request_body; content:"onmouseover="; nocase; fast_pattern; sid:1000018;)
+alert http any any -> any any (msg:"XSS: onmouseover in body"; flow:to_server,established; http.request_body; content:"onmouseover="; nocase; fast_pattern; sid:1005018;)
 
 alert http any any -> any any (msg:"XSS: onmouseover in URI"; flow:to_server,established; http.uri; content:"onmouseover="; nocase; fast_pattern; sid:2009715;)
 
-alert http any any -> any any (msg:"XSS: javascript: URI"; flow:to_server,established; http.uri; content:"javascript:"; nocase; fast_pattern; sid:1000006;)
+alert http any any -> any any (msg:"XSS: javascript: URI"; flow:to_server,established; http.uri; content:"javascript:"; nocase; fast_pattern; sid:1005006;)
 
-alert http any any -> any any (msg:"XSS: alert() call"; flow:to_server,established; http.uri; content:"alert("; nocase; fast_pattern; sid:1000007;)
+alert http any any -> any any (msg:"XSS: alert() call"; flow:to_server,established; http.uri; content:"alert("; nocase; fast_pattern; sid:1005007;)
 
-alert http any any -> any any (msg:"XSS: confirm() call"; flow:to_server,established; http.uri; content:"confirm("; nocase; fast_pattern; sid:1000015;)
+alert http any any -> any any (msg:"XSS: confirm() call"; flow:to_server,established; http.uri; content:"confirm("; nocase; fast_pattern; sid:1005015;)
 
-alert http any any -> any any (msg:"XSS: prompt() call"; flow:to_server,established; http.uri; content:"prompt("; nocase; fast_pattern; sid:1000016;)
+alert http any any -> any any (msg:"XSS: prompt() call"; flow:to_server,established; http.uri; content:"prompt("; nocase; fast_pattern; sid:1005016;)
 
-alert http any any -> any any (msg:"XSS: confirm() in body (encoded)"; flow:to_server,established; http.request_body; content:"confirm%28"; nocase; fast_pattern; sid:1000019;)
+alert http any any -> any any (msg:"XSS: confirm() in body encoded"; flow:to_server,established; http.request_body; content:"confirm%28"; nocase; fast_pattern; sid:1005019;)
 
 # Port scanning
 
